@@ -40,7 +40,7 @@ def find_version(file_path: Path = VERSION_FILE_PATH) -> str:
 
 setup(
     name="Flask-Pydantic",
-    version=find_version(),
+    version='1.12.1+persado1'
     url="https://github.com/bauerji/flask_pydantic.git",
     license="MIT",
     author="Jiri Bauer",
