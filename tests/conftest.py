@@ -20,7 +20,7 @@ def posts() -> List[Dict[str, Any]]:
 
 class Query(BaseModel):
     limit: int = 2
-    min_views: Optional[int]
+    min_views: Optional[int] = None
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def query_model() -> Type[BaseModel]:
 
 class Body(BaseModel):
     search_term: str
-    exclude: Optional[str]
+    exclude: Optional[str] = None
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def body_model() -> Type[BaseModel]:
 
 class Form(BaseModel):
     search_term: str
-    exclude: Optional[str]
+    exclude: Optional[str] = None
 
 
 @pytest.fixture
@@ -71,7 +71,13 @@ def response_model(post_model: PostModelT) -> Type[Response[PostModelT]]:
     return Response[PostModelT]
 
 
-def is_excluded(post: Dict[str, Any], exclude: Optional[str]) -> bool:
+@pytest.fixture
+def request_ctx(app):
+    with app.test_request_context() as ctx:
+        yield ctx
+
+
+def is_excluded(post: Dict[str, Any], exclude: Optional[str] = None) -> bool:
     if exclude is None:
         return False
     return exclude in post["title"] or exclude in post["text"]
@@ -80,8 +86,8 @@ def is_excluded(post: Dict[str, Any], exclude: Optional[str]) -> bool:
 def pass_search(
     post: Dict[str, Any],
     search_term: str,
-    exclude: Optional[str],
-    min_views: Optional[int],
+    exclude: Optional[str] = None,
+    min_views: Optional[int] = None,
 ) -> bool:
     return (
         (search_term in post["title"] or search_term in post["text"])

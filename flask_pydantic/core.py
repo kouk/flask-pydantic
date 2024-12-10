@@ -26,7 +26,7 @@ try:
 except ImportError:
     from flask import make_response
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, TypeAdapter, RootModel
 from pydantic.tools import parse_obj_as
 
 from .converters import convert_query_params
@@ -59,13 +59,13 @@ def make_json_response(
         js = "["
         js += ", ".join(
             [
-                model.json(exclude_none=exclude_none, by_alias=by_alias)
+                model.model_dump_json(exclude_none=exclude_none, by_alias=by_alias)
                 for model in content
             ]
         )
         js += "]"
     else:
-        js = content.json(exclude_none=exclude_none, by_alias=by_alias)
+        js = content.model_dump_json(exclude_none=exclude_none, by_alias=by_alias)
     response = make_response(js, status_code)
     response.mimetype = "application/json"
     return response
@@ -112,8 +112,8 @@ def validate_path_params(
         if name in {"query", "body", "form", "return"}:
             continue
         try:
-            value = parse_obj_as(type_, kwargs.get(name))
-            validated[name] = value
+            adapter = TypeAdapter(type_)
+            validated[name] = adapter.validate_python(kwargs.get(name))
         except ValidationError as error:
             err = error.errors()[0]
             err["loc"] = (name,)
@@ -271,8 +271,8 @@ def validate(
             if body_model is not None:
                 body_params = get_body_dict(**(get_json_params or {}))
                 try:
-                    if "__root__" in body_model.__fields__:
-                        b = body_model(__root__=body_params).__root__  # type: ignore
+                    if issubclass(body_model, RootModel):
+                        b = body_model(body_params)
                     elif request_body_many:
                         b = validate_many_models(body_model, body_params)
                     else:
@@ -290,8 +290,8 @@ def validate(
             if form_model is not None:
                 form_params = request.form
                 try:
-                    if "__root__" in form_model.__fields__:
-                        f = form_model(__root__=form_params).__root__  # type: ignore
+                    if issubclass(form_model, RootModel):
+                        f = form_model(form_params)
                     else:
                         f = form_model(**form_params)
                 except TypeError as error:

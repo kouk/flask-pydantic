@@ -51,7 +51,7 @@ setup(
     packages=["flask_pydantic"],
     package_data={"flask_pydantic": ["py.typed"]},
     install_requires=list(get_install_requires()),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     classifiers=[
         "Environment :: Web Environment",
         "Framework :: Flask",
